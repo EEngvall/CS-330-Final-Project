@@ -46,6 +46,7 @@ namespace
     GLMesh gBook2;
     GLMesh gBook3;
     GLMesh gTable;
+    GLMesh gRoundTable;
     GLMesh gLight;
     // Shader program
     GLuint gProgramId;
@@ -84,10 +85,12 @@ namespace
     glm::vec3 gCenterScale(1.0f);
     glm::vec3 gBook1Position(0.0f, 0.0f, 0.0f);
     glm::vec3 gBook1Scale(1.0f);
-    glm::vec3 gBook2Position(0.0f, 0.40, 0.0f);
+    glm::vec3 gBook2Position(0.0f, 0.40, -0.125f);
     glm::vec3 gBook2Scale(1.0f);
-    glm::vec3 gBook3Position(0.0f, 0.30f, 0.0f);
+    glm::vec3 gBook3Position(0.0f, 0.60f, -0.2f);
     glm::vec3 gBook3Scale(1.0f);
+    glm::vec3 gTablePosition(-0.25f, 0.00f, 0.0f);
+    glm::vec3 gTableScale(1.0f);
 
 
     // Object and light color
@@ -95,7 +98,7 @@ namespace
     glm::vec3 gLightColor(0.99f, 0.95f, 0.86f);
 
     // Light position and scale
-    glm::vec3 gLightPosition(5.0f, 10.0f, 10.0f);
+    glm::vec3 gLightPosition(5.0f, 8.0f, 8.0f);
     glm::vec3 gLightScale(1.0f);
 
 }
@@ -117,7 +120,7 @@ void UCreateBook2(GLMesh& mesh);
 void UCreateBook3(GLMesh& mesh);
 void UCreateTable(GLMesh& mesh);
 void UCreateLight(GLMesh& mesh);
-void drawCircle(GLfloat x, GLfloat y, GLfloat z, GLfloat radius, GLint numberOfSides);
+void UCreateRoundTable(GLMesh& mesh);
 void UDestroyMesh(GLMesh& mesh);
 bool UCreateTexture(const char* filename, GLuint& textureId);
 void UDestroyTexture(GLuint textureId);
@@ -279,6 +282,7 @@ int main(int argc, char* argv[])
     UCreateBook3(gBook3);
     UCreateTable(gTable);
     UCreateLight(gLight);
+    UCreateRoundTable(gRoundTable);
     // Create the shader program
     if (!UCreateShaderProgram(vertexShaderSource, fragmentShaderSource, gProgramId))
         return EXIT_FAILURE;
@@ -352,6 +356,7 @@ int main(int argc, char* argv[])
     UDestroyMesh(gBook3);
     UDestroyMesh(gTable);
     UDestroyMesh(gLight);
+    UDestroyMesh(gRoundTable);
 
     //Release Texture data
     UDestroyTexture(gBookTex);
@@ -430,37 +435,37 @@ void UProcessInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
         gCamera.ProcessKeyboard(FORWARD, gDeltaTime);
-        cout << "You pressed W! ";
+        //cout << "You pressed W! ";
         keypress = true;
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
         gCamera.ProcessKeyboard(BACKWARD, gDeltaTime);
-        cout << "You pressed S! ";
+        //cout << "You pressed S! ";
         keypress = true;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
         gCamera.ProcessKeyboard(LEFT, gDeltaTime);
-        cout << "You pressed A! ";
+        //cout << "You pressed A! ";
         keypress = true;
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
         gCamera.ProcessKeyboard(RIGHT, gDeltaTime);
-        cout << "You pressed D! ";
+        //cout << "You pressed D! ";
         keypress = true;
     }
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     {
         gCamera.ProcessKeyboard(DOWN, gDeltaTime);
-        cout << "You pressed Q! ";
+        //cout << "You pressed Q! ";
         keypress = true;
     }
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         gCamera.ProcessKeyboard(UP, gDeltaTime);
-        cout << "You pressed E! ";
+        //cout << "You pressed E! ";
         keypress = true;
     }
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
@@ -479,7 +484,7 @@ void UProcessInput(GLFWwindow* window)
     {
         double x, y;
         glfwGetCursorPos(window, &x, &y);
-        cout << "Cursor at position (" << x << ", " << y << ")" << endl;
+        //cout << "Cursor at position (" << x << ", " << y << ")" << endl;
     }
 }
 
@@ -499,7 +504,6 @@ void URender()
     // Clear the frame and z buffers
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
 
     // Set the shader to be used
@@ -599,8 +603,26 @@ void URender()
     glBindTexture(GL_TEXTURE_2D, gBookTex2);
     glDrawElements(GL_TRIANGLES, gBook3.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
 
-    //Draws Table
-    model = glm::translate(gCenterPosition) * glm::scale(gCenterScale);
+    ////Draws Table
+    //model = glm::translate(gCenterPosition) * glm::scale(gCenterScale);
+
+    //// Reference matrix uniforms from the Shader program
+    //modelLoc = glGetUniformLocation(gProgramId, "model");
+    //viewLoc = glGetUniformLocation(gProgramId, "view");
+    //projLoc = glGetUniformLocation(gProgramId, "projection");
+
+    //// Pass matrix data to the Shader program's matrix uniforms
+    //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    //glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    //glBindVertexArray(gTable.vao);
+    //glActiveTexture(GL_TEXTURE0);
+    //glBindTexture(GL_TEXTURE_2D, gMarbleTex);
+    //glDrawElements(GL_TRIANGLES, gTable.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
+
+    //Draws Round Table
+    model = glm::translate(gTablePosition) * glm::scale(gTableScale);
 
     // Reference matrix uniforms from the Shader program
     modelLoc = glGetUniformLocation(gProgramId, "model");
@@ -612,10 +634,10 @@ void URender()
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    glBindVertexArray(gTable.vao);
+    glBindVertexArray(gRoundTable.vao);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gMarbleTex);
-    glDrawElements(GL_TRIANGLES, gTable.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
+    glDrawElements(GL_TRIANGLES, gRoundTable.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
 
 
 
@@ -648,6 +670,7 @@ void URender()
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(gWindow);    // Flips the the back buffer with the front buffer every frame.
 }
+
 
 // Implements the UCreateBook1 function
 void UCreateBook1(GLMesh& mesh)
@@ -1048,44 +1071,171 @@ void UCreateLight(GLMesh& mesh)
     glEnableVertexAttribArray(2);
 }
 
-void drawCircle(GLfloat x, GLfloat y, GLfloat z, GLfloat radius, GLint numberOfSides)
+// Implements the UCreateRoundTable function
+void UCreateRoundTable(GLMesh& mesh)
 {
-    GLint numberOfVertices = numberOfSides + 2;
+    GLfloat x = 0;
+    GLfloat y = 0;
+    GLfloat z = 0;
+    GLfloat radius = 4;
+    GLuint numberOfSides = 6;
+    GLuint numberOfVertices = numberOfSides + 1;
+    //GLuint indices[18];
+    
     GLfloat doublePi = 2.0f * M_PI;
+
     GLfloat* circleVerticesX = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesY = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesZ = new GLfloat[numberOfVertices];
+    GLfloat allCircleVertices[63]; /*= new GLfloat[numberOfVertices * numberOfSides];*/
 
     circleVerticesX[0] = x;
     circleVerticesY[0] = y;
     circleVerticesZ[0] = z;
 
+
     for (int i = 1; i < numberOfVertices; i++)
     {
         circleVerticesX[i] = x + (radius * cos(i * doublePi / numberOfSides));
-        circleVerticesY[i] = x + (radius * sin(i * doublePi / numberOfSides));
-        circleVerticesZ[i] = z;
-
-
+        circleVerticesY[i] = y;
+        circleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
     }
-
-    GLfloat* allCircleVertices = new GLfloat[numberOfVertices * 3];
 
     for (int i = 0; i < numberOfVertices; i++)
     {
-        allCircleVertices[i * 3] = circleVerticesX[i];
-        allCircleVertices[(i * 3) + 1] = circleVerticesY[i];
-        allCircleVertices[(i * 3) + 2] = circleVerticesZ[i];
+        allCircleVertices[i * 8] = circleVerticesX[i];
+        allCircleVertices[(i * 8) + 1] = circleVerticesY[i];
+        allCircleVertices[(i * 8) + 2] = circleVerticesZ[i];
+        allCircleVertices[(i * 8) + 3] = 0.0f;
+        allCircleVertices[(i * 8) + 4] = 1.0f;
+        allCircleVertices[(i * 8) + 5] = 0.0f;
+        //allCircleVertices[(i * 9) + 6] = 0.0f;
+        //allCircleVertices[(i * 9) + 7] = 0.0f;
+        //allCircleVertices[(i * 9) + 8] = 0.0f;
+
+        if ((i * 8 + 6) == 6)
+        {
+            allCircleVertices[(i * 8) + 6] = 0.5f;
+        }
+        else
+        {
+            allCircleVertices[(i * 8) + 6] = 0.0f;
+
+        }
+        if ((i * 8 + 7) == 7)
+        {
+            allCircleVertices[(i * 8) + 7] = 0.5f;
+
+        }
+        else
+        {
+            allCircleVertices[(i * 8) + 7] = 0.0f;
+
+        }
+        if ((i * 8 + 8) == 22 || (i * 8 + 8) == 30 || (i * 8 + 8) == 38)
+        {
+            allCircleVertices[(i * 8) + 8] = 1.0f;
+        }
+        else
+        {
+            allCircleVertices[(i * 8) + 8] = 0.0f;
+        }
     }
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, 0, allCircleVertices);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, numberOfVertices);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    //for (int i = 0; i < 63; i++)
+    //{
+    //    cout << allCircleVertices[i * 8] << endl;
+    //    cout << allCircleVertices[(i * 8) + 1] << endl;
+    //    cout << allCircleVertices[(i * 8) + 2] << endl;
+    //    cout << allCircleVertices[(i * 8) + 3] << endl;
+    //    cout << allCircleVertices[(i * 8) + 4] << endl;
+    //    cout << allCircleVertices[(i * 8) + 5] << endl;
+    //    cout << allCircleVertices[(i * 8) + 6] << endl;
+    //    cout << allCircleVertices[(i * 8) + 7] << endl;
+    //    cout << allCircleVertices[(i * 8) + 8] << endl;
+
+    //}
 
 
 
+
+    //GLfloat allCircleVertices[] = {
+    //0.0f, 0.0f, 0.0f,             0.0f, 1.0f, 0.0f,           0.5f, 0.5f,
+    //3.0f, 0.0f, 4.0f,             0.0f, 1.0f, 0.0f,           0.0f, 0.0f, 
+    //-3.0f, 0.0f, 4.0f,            0.0f, 1.0f, 0.0f,           1.0f, 0.0f, 
+    //-5.0f, 0.0f, 0.0f,            0.0f, 1.0f, 0.0f,           0.0f, 0.0f, 
+    //-3.0f, 0.0f, -4.0f,           0.0f, 1.0f, 0.0f,           1.0f, 0.0f, 
+    //3.0f, 0.0f, -4.0f,            0.0f, 1.0f, 0.0f,           0.0f, 0.0f, 
+    //5.0f, 0.0f, 0.0f,             0.0f, 1.0f, 0.0f,           1.0f, 0.0f, 
+
+    //};
+
+
+
+
+    GLushort indices[] = {
+        0, 2, 1,
+        0, 3, 2,
+        0, 4, 3,
+        0, 5, 4,
+        0, 6, 5,
+        0, 1, 6
+    };
+    //for (int i = 0; i < numberOfSides; i++)
+    //{
+    //    if (i == (numberOfSides - 1))
+    //    {
+    //        indices[i * 3] = 0;
+    //        indices[(i * 3) + 1] = indices[2];
+    //        indices[(i * 3) + 2] = numberOfSides;
+    //        cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+    //    }
+    //    else
+    //    {
+    //        indices[i * 3] = 0;
+    //        indices[(i * 3) + 1] = i + 2;
+    //        indices[(i * 3) + 2] = i + 1;
+    //        cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+    //    }
+
+    //}
+
+
+
+ 
+
+
+    const GLuint floatsPerVertex = 3;
+    const GLuint floatsPerNormal = 3;
+    const GLuint floatsPerUV = 2;
+
+    glGenVertexArrays(1, &mesh.vao); // we can also generate multiple VAOs or buffers at the same time
+    glBindVertexArray(mesh.vao);
+
+    // Create 2 buffers: first one for the vertex data; second one for the indices
+    glGenBuffers(2, mesh.vbos);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbos[0]); // Activates the buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW); // Sends vertex or coordinate data to the GPU
+
+    mesh.nIndices = sizeof(indices) / sizeof(indices[0]) * (floatsPerVertex + floatsPerNormal + floatsPerUV);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.vbos[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // Strides between vertex coordinates is 6 (x, y, z, r, g, b, a). A tightly packed stride is 0.
+    GLint stride = sizeof(float) * (floatsPerVertex + floatsPerNormal + floatsPerUV);// The number of floats before each
+
+    // Create Vertex Attribute Pointers
+    glVertexAttribPointer(0, floatsPerVertex, GL_FLOAT, GL_FALSE, stride, 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, floatsPerNormal, GL_FLOAT, GL_FALSE, stride, (char*)(sizeof(float)* floatsPerVertex));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, floatsPerUV, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(float)* (floatsPerVertex + floatsPerNormal)));
+    glEnableVertexAttribArray(2);
+   
 }
+
 
 void UDestroyMesh(GLMesh& mesh)
 {
@@ -1217,7 +1367,7 @@ void UMousePositionCallback(GLFWwindow* window, double xpos, double ypos)
     gLastY = ypos;
 
     gCamera.ProcessMouseMovement(xoffset, yoffset);
-    cout << "Mouse at (" << xpos << ", " << ypos << ")" << endl;
+    //cout << "Mouse at (" << xpos << ", " << ypos << ")" << endl;
 }
 
 //Controls the camera's speed using the scroll wheel, this should be updated in the future to account for negative values. 
@@ -1225,7 +1375,7 @@ void UMouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     gCamera.MovementSpeed += yoffset;
     cout << "Camera Speed = " << gCamera.MovementSpeed << endl;
-    cout << "Mouse wheel (" << xoffset << ", " << yoffset << ")" << endl;
+    //cout << "Mouse wheel (" << xoffset << ", " << yoffset << ")" << endl;
 }
 
 //Controls the actions of the left, right, middle and undefined mouse button clicks.  Currently set just to print out the action. 
