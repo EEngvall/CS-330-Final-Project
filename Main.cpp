@@ -89,7 +89,7 @@ namespace
     glm::vec3 gBook2Scale(1.0f);
     glm::vec3 gBook3Position(0.0f, 0.60f, -0.2f);
     glm::vec3 gBook3Scale(1.0f);
-    glm::vec3 gTablePosition(-0.25f, 0.00f, 0.0f);
+    glm::vec3 gTablePosition(0.0f, -0.25f, 0.0f);
     glm::vec3 gTableScale(1.0f);
 
 
@@ -1093,14 +1093,15 @@ void UCreateRoundTable(GLMesh& mesh)
     circleVerticesY[0] = y;
     circleVerticesZ[0] = z;
 
-
+    //Loop to determine angles between vertices
     for (int i = 1; i < numberOfVertices; i++)
     {
         circleVerticesX[i] = x + (radius * cos(i * doublePi / numberOfSides));
         circleVerticesY[i] = y;
         circleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
     }
-
+    
+    //Loop to fill array with vertices
     for (int i = 0; i < numberOfVertices; i++)
     {
         allCircleVertices[i * 8] = circleVerticesX[i];
@@ -1109,9 +1110,7 @@ void UCreateRoundTable(GLMesh& mesh)
         allCircleVertices[(i * 8) + 3] = 0.0f;
         allCircleVertices[(i * 8) + 4] = 1.0f;
         allCircleVertices[(i * 8) + 5] = 0.0f;
-        //allCircleVertices[(i * 9) + 6] = 0.0f;
-        //allCircleVertices[(i * 9) + 7] = 0.0f;
-        //allCircleVertices[(i * 9) + 8] = 0.0f;
+
 
         if ((i * 8 + 6) == 6)
         {
@@ -1181,6 +1180,9 @@ void UCreateRoundTable(GLMesh& mesh)
         0, 6, 5,
         0, 1, 6
     };
+
+    /*FIX STILL NEEDED*/
+    ////For loop to fill Indices array with correct indices based on number of sides
     //for (int i = 0; i < numberOfSides; i++)
     //{
     //    if (i == (numberOfSides - 1))
