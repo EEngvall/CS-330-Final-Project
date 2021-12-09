@@ -1116,10 +1116,13 @@ void UCreateRoundTable(GLMesh& mesh)
         {
             allCircleVertices[(i * 8) + 6] = 0.5f;
         }
+        else if ((i * 8 + 6) == 22 || (i * 8 + 6) == 38 || (i * 8 + 6) == 54)
+        {
+            allCircleVertices[(i * 8) + 6] = 1.0f;
+        }
         else
         {
             allCircleVertices[(i * 8) + 6] = 0.0f;
-
         }
         if ((i * 8 + 7) == 7)
         {
@@ -1129,31 +1132,21 @@ void UCreateRoundTable(GLMesh& mesh)
         else
         {
             allCircleVertices[(i * 8) + 7] = 0.0f;
-
-        }
-        if ((i * 8 + 8) == 22 || (i * 8 + 8) == 30 || (i * 8 + 8) == 38)
-        {
-            allCircleVertices[(i * 8) + 8] = 1.0f;
-        }
-        else
-        {
-            allCircleVertices[(i * 8) + 8] = 0.0f;
         }
     }
 
-    //for (int i = 0; i < 63; i++)
-    //{
-    //    cout << allCircleVertices[i * 8] << endl;
-    //    cout << allCircleVertices[(i * 8) + 1] << endl;
-    //    cout << allCircleVertices[(i * 8) + 2] << endl;
-    //    cout << allCircleVertices[(i * 8) + 3] << endl;
-    //    cout << allCircleVertices[(i * 8) + 4] << endl;
-    //    cout << allCircleVertices[(i * 8) + 5] << endl;
-    //    cout << allCircleVertices[(i * 8) + 6] << endl;
-    //    cout << allCircleVertices[(i * 8) + 7] << endl;
-    //    cout << allCircleVertices[(i * 8) + 8] << endl;
+    for (int i = 0; i < 7; i++)
+    {
+        //cout << allCircleVertices[i * 8] << endl;
+        //cout << allCircleVertices[(i * 8) + 1] << endl;
+        //cout << allCircleVertices[(i * 8) + 2] << endl;
+        //cout << allCircleVertices[(i * 8) + 3] << endl;
+        //cout << allCircleVertices[(i * 8) + 4] << endl;
+        //cout << allCircleVertices[(i * 8) + 5] << endl;
+        cout << allCircleVertices[(i * 8) + 6] << endl;
+        cout << allCircleVertices[(i * 8) + 7] << endl;
 
-    //}
+    }
 
 
 
