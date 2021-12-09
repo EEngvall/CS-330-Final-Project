@@ -1074,20 +1074,25 @@ void UCreateLight(GLMesh& mesh)
 // Implements the UCreateRoundTable function
 void UCreateRoundTable(GLMesh& mesh)
 {
+    /*FIX STILL NEEDED TO DYNAMICALLY UPDATE THESE VALUES*/
+    //When changing numberOfSides need to also update indices[] to numberOfSides*3 and allCircleVertices[] to numberOfVertices*numberOfSides
     GLfloat x = 0;
     GLfloat y = 0;
     GLfloat z = 0;
     GLfloat radius = 4;
-    GLuint numberOfSides = 6;
+    GLuint numberOfSides = 20;
     GLuint numberOfVertices = numberOfSides + 1;
-    //GLuint indices[18];
+    GLuint k = 22;
+    GLushort indices[60];
     
     GLfloat doublePi = 2.0f * M_PI;
 
     GLfloat* circleVerticesX = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesY = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesZ = new GLfloat[numberOfVertices];
-    GLfloat allCircleVertices[63]; /*= new GLfloat[numberOfVertices * numberOfSides];*/
+    GLfloat* circleTexturesX = new GLfloat[numberOfVertices];
+    GLfloat* circleTexturesY = new GLfloat[numberOfVertices];
+    GLfloat allCircleVertices[420]; /*= new GLfloat[numberOfVertices * numberOfSides];*/
 
     circleVerticesX[0] = x;
     circleVerticesY[0] = y;
@@ -1100,10 +1105,19 @@ void UCreateRoundTable(GLMesh& mesh)
         circleVerticesY[i] = y;
         circleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
     }
-    
+
+    for (int i = 1; i < numberOfVertices; i++)
+    {
+        circleTexturesX[i] = (circleVerticesX[i] / radius + 1) * 0.5f;
+        circleTexturesX[i] = (circleVerticesZ[i] / radius + 1) * 0.5f;
+        cout << circleTexturesX[i] << endl;
+        cout << circleTexturesY[i] << endl;
+    }
+
     //Loop to fill array with vertices
     for (int i = 0; i < numberOfVertices; i++)
     {
+       
         allCircleVertices[i * 8] = circleVerticesX[i];
         allCircleVertices[(i * 8) + 1] = circleVerticesY[i];
         allCircleVertices[(i * 8) + 2] = circleVerticesZ[i];
@@ -1116,9 +1130,10 @@ void UCreateRoundTable(GLMesh& mesh)
         {
             allCircleVertices[(i * 8) + 6] = 0.5f;
         }
-        else if ((i * 8 + 6) == 22 || (i * 8 + 6) == 38 || (i * 8 + 6) == 54)
+        else if ((i * 8 + 6) == k) /*|| (i * 8 + 6) == 38 || (i * 8 + 6) == 54 || (i * 8 + 6) == 70 || (i * 8 + 6) == 86 || (i * 8 + 6) == 92)*/
         {
             allCircleVertices[(i * 8) + 6] = 1.0f;
+            k += 16;
         }
         else
         {
@@ -1135,7 +1150,7 @@ void UCreateRoundTable(GLMesh& mesh)
         }
     }
 
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 9; i++)
     {
         //cout << allCircleVertices[i * 8] << endl;
         //cout << allCircleVertices[(i * 8) + 1] << endl;
@@ -1143,8 +1158,8 @@ void UCreateRoundTable(GLMesh& mesh)
         //cout << allCircleVertices[(i * 8) + 3] << endl;
         //cout << allCircleVertices[(i * 8) + 4] << endl;
         //cout << allCircleVertices[(i * 8) + 5] << endl;
-        cout << allCircleVertices[(i * 8) + 6] << endl;
-        cout << allCircleVertices[(i * 8) + 7] << endl;
+        //cout << allCircleVertices[(i * 8) + 6] << endl;
+        //cout << allCircleVertices[(i * 8) + 7] << endl;
 
     }
 
@@ -1165,35 +1180,34 @@ void UCreateRoundTable(GLMesh& mesh)
 
 
 
-    GLushort indices[] = {
-        0, 2, 1,
-        0, 3, 2,
-        0, 4, 3,
-        0, 5, 4,
-        0, 6, 5,
-        0, 1, 6
-    };
+    //GLushort indices[] = {
+    //    0, 2, 1,
+    //    0, 3, 2,
+    //    0, 4, 3,
+    //    0, 5, 4,
+    //    0, 6, 5,
+    //    0, 1, 6
+    //};
 
-    /*FIX STILL NEEDED*/
-    ////For loop to fill Indices array with correct indices based on number of sides
-    //for (int i = 0; i < numberOfSides; i++)
-    //{
-    //    if (i == (numberOfSides - 1))
-    //    {
-    //        indices[i * 3] = 0;
-    //        indices[(i * 3) + 1] = indices[2];
-    //        indices[(i * 3) + 2] = numberOfSides;
-    //        cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
-    //    }
-    //    else
-    //    {
-    //        indices[i * 3] = 0;
-    //        indices[(i * 3) + 1] = i + 2;
-    //        indices[(i * 3) + 2] = i + 1;
-    //        cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
-    //    }
+    //For loop to fill Indices array with correct indices based on number of sides
+    for (int i = 0; i < numberOfSides; i++)
+    {
+        if (i == (numberOfSides - 1))
+        {
+            indices[i * 3] = 0;
+            indices[(i * 3) + 1] = indices[2];
+            indices[(i * 3) + 2] = numberOfSides;
+            //cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+        }
+        else
+        {
+            indices[i * 3] = 0;
+            indices[(i * 3) + 1] = i + 2;
+            indices[(i * 3) + 2] = i + 1;
+            //cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+        }
 
-    //}
+    }
 
 
 
