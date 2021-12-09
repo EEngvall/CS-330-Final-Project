@@ -1083,6 +1083,7 @@ void UCreateRoundTable(GLMesh& mesh)
     GLuint numberOfSides = 20;
     GLuint numberOfVertices = numberOfSides + 1;
     GLuint k = 22;
+    GLuint angle = 360 / numberOfSides;
     GLushort indices[60];
     
     GLfloat doublePi = 2.0f * M_PI;
@@ -1090,8 +1091,6 @@ void UCreateRoundTable(GLMesh& mesh)
     GLfloat* circleVerticesX = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesY = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesZ = new GLfloat[numberOfVertices];
-    GLfloat* circleTexturesX = new GLfloat[numberOfVertices];
-    GLfloat* circleTexturesY = new GLfloat[numberOfVertices];
     GLfloat allCircleVertices[420]; /*= new GLfloat[numberOfVertices * numberOfSides];*/
 
     circleVerticesX[0] = x;
@@ -1106,13 +1105,6 @@ void UCreateRoundTable(GLMesh& mesh)
         circleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
     }
 
-    for (int i = 1; i < numberOfVertices; i++)
-    {
-        circleTexturesX[i] = (circleVerticesX[i] / radius + 1) * 0.5f;
-        circleTexturesX[i] = (circleVerticesZ[i] / radius + 1) * 0.5f;
-        cout << circleTexturesX[i] << endl;
-        cout << circleTexturesY[i] << endl;
-    }
 
     //Loop to fill array with vertices
     for (int i = 0; i < numberOfVertices; i++)
@@ -1125,43 +1117,48 @@ void UCreateRoundTable(GLMesh& mesh)
         allCircleVertices[(i * 8) + 4] = 1.0f;
         allCircleVertices[(i * 8) + 5] = 0.0f;
 
-
-        if ((i * 8 + 6) == 6)
+        if ((i * 8) + 6 == 6)
         {
-            allCircleVertices[(i * 8) + 6] = 0.5f;
-        }
-        else if ((i * 8 + 6) == k) /*|| (i * 8 + 6) == 38 || (i * 8 + 6) == 54 || (i * 8 + 6) == 70 || (i * 8 + 6) == 86 || (i * 8 + 6) == 92)*/
-        {
-            allCircleVertices[(i * 8) + 6] = 1.0f;
-            k += 16;
+            allCircleVertices[6] = 0.5f;
         }
         else
         {
-            allCircleVertices[(i * 8) + 6] = 0.0f;
+            allCircleVertices[(i * 8 + 6)] = 0.5 * (sin(angle * i));
         }
         if ((i * 8 + 7) == 7)
         {
-            allCircleVertices[(i * 8) + 7] = 0.5f;
-
+            allCircleVertices[7] = 0.5f;
         }
         else
         {
-            allCircleVertices[(i * 8) + 7] = 0.0f;
+            allCircleVertices[(i * 8 + 7)] = 0.5 * (cos(angle * i));
         }
+
+
+        //if ((i * 8 + 6) == 6)
+        //{
+        //    allCircleVertices[(i * 8) + 6] = 0.5f;
+        //}
+        //else if ((i * 8 + 6) == k) /*|| (i * 8 + 6) == 38 || (i * 8 + 6) == 54 || (i * 8 + 6) == 70 || (i * 8 + 6) == 86 || (i * 8 + 6) == 92)*/
+        //{
+        //    allCircleVertices[(i * 8) + 6] = 1.0f;
+        //    k += 16;
+        //}
+        //else
+        //{
+        //    allCircleVertices[(i * 8) + 6] = 0.0f;
+        //}
+        //if ((i * 8 + 7) == 7)
+        //{
+        //    allCircleVertices[(i * 8) + 7] = 0.5f;
+
+        //}
+        //else
+        //{
+        //    allCircleVertices[(i * 8) + 7] = 0.0f;
+        //}
     }
 
-    for (int i = 0; i < 9; i++)
-    {
-        //cout << allCircleVertices[i * 8] << endl;
-        //cout << allCircleVertices[(i * 8) + 1] << endl;
-        //cout << allCircleVertices[(i * 8) + 2] << endl;
-        //cout << allCircleVertices[(i * 8) + 3] << endl;
-        //cout << allCircleVertices[(i * 8) + 4] << endl;
-        //cout << allCircleVertices[(i * 8) + 5] << endl;
-        //cout << allCircleVertices[(i * 8) + 6] << endl;
-        //cout << allCircleVertices[(i * 8) + 7] << endl;
-
-    }
 
 
 
