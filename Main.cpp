@@ -48,14 +48,20 @@ namespace
     GLMesh gTable;
     GLMesh gRoundTable;
     GLMesh gLight;
+    GLMesh gLight2;
+    GLMesh gCandle;
+    GLMesh gCoaster;
+    GLMesh gCoaster2;
     // Shader program
     GLuint gProgramId;
     GLuint gLightProgramId;
+    GLuint gLightProgram2Id;
     GLuint gBookTex;
     GLuint gBookTex2;
     GLuint gMarbleTex;
     GLuint gParchmentTex;
     GLuint gStain;
+    GLuint gCoasterTex;
 
     glm::vec2 gUVScale(5.0f, 5.0f);
     GLint gTexWrapMode = GL_REPEAT;
@@ -91,15 +97,24 @@ namespace
     glm::vec3 gBook3Scale(1.0f);
     glm::vec3 gTablePosition(0.0f, -0.25f, 0.0f);
     glm::vec3 gTableScale(1.0f);
+    glm::vec3 gCoasterPosition(-1.5f, -0.2f, 0.5f);
+    glm::vec3 gCoasterScale(1.0f);
+    glm::vec3 gCoasterPosition2(-2.5f, -0.2f, 0.9f);
+    glm::vec3 gCoasterScale2(1.0f);
 
 
     // Object and light color
     glm::vec3 gObjectColor(1.f, 0.2f, 0.0f);
-    glm::vec3 gLightColor(0.99f, 0.95f, 0.86f);
+    glm::vec3 gLightColor(1.0f, 1.0f, 1.0f);
+    glm::vec3 gLightColor2(0.84f, 0.91f, 0.97f);
+
 
     // Light position and scale
     glm::vec3 gLightPosition(5.0f, 8.0f, 8.0f);
     glm::vec3 gLightScale(1.0f);
+    // Light position and scale
+    glm::vec3 gLightPosition2(-8.0f, 4.0f, -8.0f);
+    glm::vec3 gLightScale2(1.0f);
 
 }
 
@@ -118,11 +133,13 @@ void UMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void UCreateBook1(GLMesh& mesh);
 void UCreateBook2(GLMesh& mesh);
 void UCreateBook3(GLMesh& mesh);
-void UCreateTable(GLMesh& mesh);
 void UCreateLight(GLMesh& mesh);
 void UCreateRoundTable(GLMesh& mesh);
+void UCreateCandle(GLMesh& mesh);
+void UCreateCoaster(GLMesh& mesh);
 void UDestroyMesh(GLMesh& mesh);
 bool UCreateTexture(const char* filename, GLuint& textureId);
+bool UCreateTextureClamp(const char* filename, GLuint& textureId);
 void UDestroyTexture(GLuint textureId);
 void URender();
 bool UCreateShaderProgram(const char* vtxShaderSource, const char* fragShaderSource, GLuint& programId);
@@ -169,7 +186,9 @@ uniform sampler2D uTextureExtra;
 uniform bool multipleTextures;
 uniform vec3 objectColor;
 uniform vec3 lightColor;
+uniform vec3 lightColor2;
 uniform vec3 lightPos;
+uniform vec3 lightPos2;
 uniform vec3 viewPosition;
 uniform sampler2D uTexture; // Useful when working with multiple textures
 uniform vec2 uvScale;
@@ -181,43 +200,50 @@ void main()
 
     //Calculate Ambient lighting*/
     float ambientStrength = 0.2f; // Set ambient or global lighting strength
-    vec3 ambient = ambientStrength * lightColor; // Generate ambient light color
+    vec3 ambient = ambientStrength * lightColor * lightColor2; // Generate ambient light color
 
     //Calculate Diffuse lighting*/
     vec3 norm = normalize(vertexNormal); // Normalize vectors to 1 unit
 
     vec3 lightDirection = normalize(lightPos - vertexFragmentPos); // Calculate distance (light direction) between light source and fragments/pixels on cube
+    vec3 lightDirection2 = normalize(lightPos2 - vertexFragmentPos); // Calculate distance (light direction) between light source and fragments/pixels on cube
 
     float impact = max(dot(norm, lightDirection), 0.0);// Calculate diffuse impact by generating dot product of normal and light
+    float impact2 = max(dot(norm, lightDirection2), 0.0);// Calculate diffuse impact by generating dot product of normal and light
+
 
     vec3 diffuse = impact * lightColor; // Generate diffuse light color
+    vec3 diffuse2 = impact2 * lightColor2; // Generate diffuse light color
+
 
 
     //Calculate Specular lighting*/
     float specularIntensity = 1.0f; // Set specular light strength
-    float highlightSize = 32.0f; // Set specular highlight size
+    float specularIntensity2 = 0.1f; // Set specular light strength
+    float highlightSize = 5.0f; // Set specular highlight size
+    float highlightSize2 = 32.0f; // Set specular highlight size
     vec3 viewDir = normalize(viewPosition - vertexFragmentPos); // Calculate view direction
     vec3 reflectDir = reflect(-lightDirection, norm);// Calculate reflection vector
+    vec3 reflectDir2 = reflect(-lightDirection2, norm);// Calculate reflection vector
+
     //Calculate specular component
     float specularComponent = pow(max(dot(viewDir, reflectDir), 0.0), highlightSize);
+    float specularComponent2 = pow(max(dot(viewDir, reflectDir2), 0.0), highlightSize2);
+
 
     vec3 specular = specularIntensity * specularComponent * lightColor;
+    vec3 specular2 = specularIntensity2 * specularComponent2 * lightColor2;
+
 
     // Texture holds the color to be used for all three components
     vec4 textureColor = texture(uTexture, vertexTextureCoordinate * uvScale);
 
-    vec3 fullDiffuse = diffuse;
-    vec3 fullSpecular = specular;
+    vec3 fullDiffuse = diffuse + diffuse2;
+    vec3 fullSpecular = specular + specular2;
     // Calculate phong result
     vec3 phong = (ambient + fullDiffuse + fullSpecular) * textureColor.xyz;
 
-    fragmentColor = texture(uTextureBase, vertexTextureCoordinate) * vec4(phong, 1.0); // Send lighting results to GPU
-    if (multipleTextures)
-    {
-        vec4 extraTexture = texture(uTextureExtra, vertexTextureCoordinate) * vec4(phong, 1.0);
-        if (extraTexture.a != 0.0)
-            fragmentColor = extraTexture;
-    }
+    fragmentColor = vec4(phong, 1.0); // Send lighting results to GPU
 
 }
 );
@@ -241,6 +267,33 @@ void main()
 
 /* Light Fragment Shader Source Code*/
 const GLchar* lightFragmentShaderSource = GLSL(440,
+
+    out vec4 fragmentColor; // For outgoing light color (smaller pyramid) to the GPU
+
+void main()
+{
+    fragmentColor = vec4(1.0f); // Set color to white (1.0f,1.0f,1.0f) with alpha 1.0
+}
+);
+
+/* Fill Light Shader Source Code*/
+const GLchar* lightVertexShaderSource2 = GLSL(440,
+
+    layout(location = 0) in vec3 position; // VAP position 0 for vertex position data
+
+        //Uniform / Global variables for the  transform matrices
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    gl_Position = projection * view * model * vec4(position, 1.0f); // Transforms vertices into clip coordinates
+}
+);
+
+/* Fill Light Fragment Shader Source Code*/
+const GLchar* lightFragmentShaderSource2 = GLSL(440,
 
     out vec4 fragmentColor; // For outgoing light color (smaller pyramid) to the GPU
 
@@ -280,13 +333,17 @@ int main(int argc, char* argv[])
     UCreateBook1(gBook1); // Calls the function to create the Vertex Buffer Object
     UCreateBook2(gBook2);
     UCreateBook3(gBook3);
-    UCreateTable(gTable);
     UCreateLight(gLight);
+    UCreateLight(gLight2);
     UCreateRoundTable(gRoundTable);
+    UCreateCoaster(gCoaster);
+    UCreateCoaster(gCoaster2);
     // Create the shader program
     if (!UCreateShaderProgram(vertexShaderSource, fragmentShaderSource, gProgramId))
         return EXIT_FAILURE;
     if (!UCreateShaderProgram(lightVertexShaderSource, lightFragmentShaderSource, gLightProgramId))
+        return EXIT_FAILURE;
+    if (!UCreateShaderProgram(lightVertexShaderSource2, lightFragmentShaderSource2, gLightProgram2Id))
         return EXIT_FAILURE;
 
     // Load textures
@@ -314,8 +371,8 @@ int main(int argc, char* argv[])
         cout << "Failed to load texture " << texFilename << endl;
         return EXIT_FAILURE;
     }
-    texFilename = "img/Stain.jpg";
-    if (!UCreateTexture(texFilename, gStain))
+    texFilename = "img/Coaster.jpg";
+    if (!UCreateTexture(texFilename, gCoasterTex))
     {
         cout << "Failed to load texture " << texFilename << endl;
         return EXIT_FAILURE;
@@ -356,18 +413,24 @@ int main(int argc, char* argv[])
     UDestroyMesh(gBook3);
     UDestroyMesh(gTable);
     UDestroyMesh(gLight);
+    UDestroyMesh(gLight2);
     UDestroyMesh(gRoundTable);
+    UDestroyMesh(gCoaster);
+    UDestroyMesh(gCoaster2);
+
 
     //Release Texture data
     UDestroyTexture(gBookTex);
     UDestroyTexture(gBookTex2);
     UDestroyTexture(gMarbleTex);
     UDestroyTexture(gParchmentTex);
-    UDestroyTexture(gStain);
+    UDestroyTexture(gCoasterTex);
 
     // Release shader program
     UDestroyShaderProgram(gProgramId);
     UDestroyShaderProgram(gLightProgramId);
+    UDestroyShaderProgram(gLightProgram2Id);
+
 
     exit(EXIT_SUCCESS); // Terminates the program successfully
 }
@@ -539,11 +602,15 @@ void URender()
     GLint lightColorLoc = glGetUniformLocation(gProgramId, "lightColor");
     GLint lightPositionLoc = glGetUniformLocation(gProgramId, "lightPos");
     GLint viewPositionLoc = glGetUniformLocation(gProgramId, "viewPosition");
+    GLint lightColorLoc2 = glGetUniformLocation(gProgramId, "lightColor2");
+    GLint lightPositionLoc2 = glGetUniformLocation(gProgramId, "lightPos2");
 
     // Pass color, light, and camera data to the Pyramid Shader program's corresponding uniforms
     glUniform3f(objectColorLoc, gObjectColor.r, gObjectColor.g, gObjectColor.b);
     glUniform3f(lightColorLoc, gLightColor.r, gLightColor.g, gLightColor.b);
     glUniform3f(lightPositionLoc, gLightPosition.x, gLightPosition.y, gLightPosition.z);
+    glUniform3f(lightPositionLoc2, gLightPosition2.x, gLightPosition2.y, gLightPosition2.z);
+    glUniform3f(lightColorLoc2, gLightColor2.r, gLightColor2.g, gLightColor2.b);
     const glm::vec3 cameraPosition = gCamera.Position;
     glUniform3f(viewPositionLoc, cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
@@ -603,24 +670,6 @@ void URender()
     glBindTexture(GL_TEXTURE_2D, gBookTex2);
     glDrawElements(GL_TRIANGLES, gBook3.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
 
-    ////Draws Table
-    //model = glm::translate(gCenterPosition) * glm::scale(gCenterScale);
-
-    //// Reference matrix uniforms from the Shader program
-    //modelLoc = glGetUniformLocation(gProgramId, "model");
-    //viewLoc = glGetUniformLocation(gProgramId, "view");
-    //projLoc = glGetUniformLocation(gProgramId, "projection");
-
-    //// Pass matrix data to the Shader program's matrix uniforms
-    //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    //glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-    //glBindVertexArray(gTable.vao);
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, gMarbleTex);
-    //glDrawElements(GL_TRIANGLES, gTable.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
-
     //Draws Round Table
     model = glm::translate(gTablePosition) * glm::scale(gTableScale);
 
@@ -639,7 +688,41 @@ void URender()
     glBindTexture(GL_TEXTURE_2D, gMarbleTex);
     glDrawElements(GL_TRIANGLES, gRoundTable.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
 
+     //Draws Coaster
+    model = glm::translate(gCoasterPosition) * glm::scale(gCoasterScale);
 
+    // Reference matrix uniforms from the Shader program
+    modelLoc = glGetUniformLocation(gProgramId, "model");
+    viewLoc = glGetUniformLocation(gProgramId, "view");
+    projLoc = glGetUniformLocation(gProgramId, "projection");
+
+    // Pass matrix data to the Shader program's matrix uniforms
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glBindVertexArray(gCoaster.vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gCoasterTex);
+    glDrawElements(GL_TRIANGLES, gCoaster.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
+
+    //Draws Second Coaster
+    model = glm::translate(gCoasterPosition2) * glm::rotate(15.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(gCoasterScale2);
+
+    // Reference matrix uniforms from the Shader program
+    modelLoc = glGetUniformLocation(gProgramId, "model");
+    viewLoc = glGetUniformLocation(gProgramId, "view");
+    projLoc = glGetUniformLocation(gProgramId, "projection");
+
+    // Pass matrix data to the Shader program's matrix uniforms
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glBindVertexArray(gCoaster2.vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gCoasterTex);
+    glDrawElements(GL_TRIANGLES, gCoaster2.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
 
     //Draws Light
     //----------------
@@ -662,6 +745,26 @@ void URender()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gParchmentTex);
     glDrawElements(GL_TRIANGLES, gLight.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
+
+    //Draws Second Light
+    glUseProgram(gLightProgram2Id);
+    //Transform the smaller pyramid used as a visual que for the light source
+    model = glm::translate(gLightPosition2) * glm::scale(gLightScale2);
+
+    // Reference matrix uniforms from the Lamp Shader program
+    modelLoc = glGetUniformLocation(gLightProgram2Id, "model");
+    viewLoc = glGetUniformLocation(gLightProgram2Id, "view");
+    projLoc = glGetUniformLocation(gLightProgram2Id, "projection");
+
+    // Pass matrix data to the Lamp Shader program's matrix uniforms
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glBindVertexArray(gLight2.vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gParchmentTex);
+    glDrawElements(GL_TRIANGLES, gLight2.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
 
     // Deactivate the Vertex Array Object
     glBindVertexArray(0);
@@ -937,24 +1040,55 @@ void UCreateBook3(GLMesh& mesh)
 }
 
 // Implements the UCreateTable function
-void UCreateTable(GLMesh& mesh)
+void UCreateCoaster(GLMesh& mesh)
 {
+    GLfloat width = 0.25f;
+    GLfloat height = 0.05f;
+    GLfloat depth = 0.50f;
     // Position and Color data
     GLfloat verts[] = {
 
-        // Vertex Positions         // +/- Normals                 //Texture Coordinates
-        5.0f, -0.25f, -5.0f,        0.0f, 1.0f, 0.0f,              1.0f, 1.0f,                       //24 Back Right of Plane
-        5.0f, -0.25f, 5.0f,         0.0f, 1.0f, 0.0f,              1.0f, 0.0f,                       //25 Front Right of Plane
-        -5.0f, -0.25f, 5.0f,        0.0f, 1.0f, 0.0f,              0.0f, 0.0f,                       //26 Front Left of Plane
-        -5.0f, -0.25f, -5.0f,       0.0f, 1.0f, 0.0f,              0.0f, 1.0f,                       //27 Back Left of Plane
+        // Vertex Positions    // +/- Normals          //Textture Coordinates
+        width, height, 0.0f,      0.0f,  0.0f,  1.0f,       1.0f, 1.0f,                        // 0 Top Right Close (Lower Cube)
+        width, -height, 0.0f,     0.0f,  0.0f,  1.0f,       0.0f, 1.0f,                        // 1 Bottom Right Close (Lower Cube)
+        -width, -height, 0.0f,    0.0f,  0.0f,  1.0f,       0.0f, 0.0f,                        // 2 Bottom Left Close (Lower Cube)
+        -width,  height, 0.0f,    0.0f,  0.0f,  1.0f,       1.0f, 0.0f,                        // 3 Top Left Close (lower Cube)
+
+        width, -height, -depth,    1.0f,  0.0f,  0.0f,       1.0f, 0.0f,                        // 4 Bottom Right Far (Lower Cube)
+        width,  height, -depth,    1.0f,  0.0f,  0.0f,       1.0f, 1.0f,                        // 5 Top Right Far (Lower Cube)
+        width, height, 0.0f,      1.0f,  0.0f,  0.0f,       0.0f, 1.0f,                        // 6 Top Right Close (Lower Cube)
+        width, -height, 0.0f,     1.0f,  0.0f,  0.0f,       0.0f, 0.0f,                        // 7 Bottom Right Close (Lower Cube)
+
+
+        width,  height, -depth,    -1.0f,  0.0f,  0.0f,       0.0f, 1.0f,                       // 8 Top Right Far (Lower Cube)
+        width, -height, -depth,    -1.0f,  0.0f,  0.0f,       0.0f, 0.0f,                       // 9 Bottom Right Far (Lower Cube)
+        -width, -height, -depth,   -1.0f,  0.0f,  0.0f,       1.0f, 0.0f,                       // 10 Bottom Left Far (Lower Cube)
+        -width,  height, -depth,   -1.0f,  0.0f,  0.0f,       1.0f, 1.0f,                       // 11 Top Left Far (Lower Cube)
+
+        -width, -height, 0.0f,    -1.0f,  0.0f,  0.0f,       0.0f, 1.0f,                       // 12 Bottom Left Close (Lower Cube)
+        -width,  height, 0.0f,    -1.0f,  0.0f,  0.0f,       1.0f, 1.0f,                       // 13 Top Left Close (lower Cube)
+        -width,  height, -depth,   -1.0f,  0.0f,  0.0f,       1.0f, 0.0f,                       // 14 Top Left Far (Lower Cube)
+        -width, -height, -depth,   -1.0f,  0.0f,  0.0f,       0.0f, 0.0f,                       // 15 Bottom Left Far (Lower Cube)
+
+        width, height, 0.0f,      0.0f,  1.0f,  0.0f,       0.0f, 1.0f,                        // 16 Top Right Close (Lower Cube)
+        -width,  height, 0.0f,    0.0f,  1.0f,  0.0f,       1.0f, 1.0f,                        // 17 Top Left Close (lower Cube)
+        -width,  height, -depth,   0.0f,  1.0f,  0.0f,       1.0f, 0.0f,                        // 18 Top Left Far (Lower Cube)
+        width,  height, -depth,    0.0f,  1.0f,  0.0f,       0.0f, 0.0f,                        // 19 Top Right Far (Lower Cube)
 
     };
 
     // Index data to share position data
     GLushort indices[] = {
-        0, 1, 2,
-        2, 3, 0
-
+        0, 1, 3,  //Create Bottom Cube
+        1, 2, 3,
+        4, 5, 6,
+        6, 7, 4,
+        8, 9, 10,
+        10, 11, 8,
+        12, 13, 14,
+        14, 15, 12,
+        16, 17, 18,
+        18, 19, 16
     };
 
     const GLuint floatsPerVertex = 3;
@@ -1080,29 +1214,45 @@ void UCreateRoundTable(GLMesh& mesh)
     GLfloat y = 0;
     GLfloat z = 0;
     GLfloat radius = 4;
-    GLuint numberOfSides = 20;
+    GLuint numberOfSides = 50;
     GLuint numberOfVertices = numberOfSides + 1;
     GLuint k = 22;
-    GLuint angle = 360 / numberOfSides;
-    GLushort indices[60];
+    GLfloat angle = (360/numberOfSides)*(M_PI/180);
+    vector<int> indices2(numberOfSides*3, 0);
+    GLushort indices[150];
     
     GLfloat doublePi = 2.0f * M_PI;
 
     GLfloat* circleVerticesX = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesY = new GLfloat[numberOfVertices];
     GLfloat* circleVerticesZ = new GLfloat[numberOfVertices];
-    GLfloat allCircleVertices[420]; /*= new GLfloat[numberOfVertices * numberOfSides];*/
+    GLfloat* textureVerticesX = new GLfloat[numberOfVertices];
+    GLfloat* textureVerticesY = new GLfloat[numberOfVertices];
 
-    circleVerticesX[0] = x;
-    circleVerticesY[0] = y;
-    circleVerticesZ[0] = z;
+    GLfloat allCircleVertices[2550]; 
+
 
     //Loop to determine angles between vertices
-    for (int i = 1; i < numberOfVertices; i++)
+    for (int i = 0; i < numberOfVertices; i++)
     {
-        circleVerticesX[i] = x + (radius * cos(i * doublePi / numberOfSides));
-        circleVerticesY[i] = y;
-        circleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
+        if (i == 0)
+        {
+            circleVerticesX[i] = x;
+            circleVerticesY[i] = y;
+            circleVerticesZ[i] = z; 
+            textureVerticesX[i] = 0.5f;
+            textureVerticesY[i] = 0.5f;
+        }
+        else 
+        {
+            circleVerticesX[i] = x + (radius * cos(i * doublePi / numberOfSides));
+            circleVerticesY[i] = y;
+            circleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
+            textureVerticesX[i] = x + 0.5f * cos(i * doublePi / numberOfSides);
+            textureVerticesY[i] = z + 0.5f * sin(i * doublePi / numberOfSides);
+        }
+
+
     }
 
 
@@ -1117,74 +1267,30 @@ void UCreateRoundTable(GLMesh& mesh)
         allCircleVertices[(i * 8) + 4] = 1.0f;
         allCircleVertices[(i * 8) + 5] = 0.0f;
 
-        if ((i * 8) + 6 == 6)
+        if (i == 0)
         {
             allCircleVertices[6] = 0.5f;
-        }
-        else
-        {
-            allCircleVertices[(i * 8 + 6)] = 0.5 * (sin(angle * i));
-        }
-        if ((i * 8 + 7) == 7)
-        {
             allCircleVertices[7] = 0.5f;
         }
         else
         {
-            allCircleVertices[(i * 8 + 7)] = 0.5 * (cos(angle * i));
+            allCircleVertices[(i * 8 + 6)] = textureVerticesX[i];
+            allCircleVertices[(i * 8 + 7)] = textureVerticesY[i];
         }
+  
+        
+
+        //cout << "X: " << allCircleVertices[i * 8] << endl;
+        //cout << "Y: " << allCircleVertices[(i * 8) + 1] << endl;
+        //cout << "Z: " << allCircleVertices[(i * 8) + 2] << endl;
+        //cout << "Texture X: " << allCircleVertices[(i * 8 + 6)] << endl;
+        //cout << "Texture y: " << allCircleVertices[(i * 8 + 7)] << endl;
 
 
-        //if ((i * 8 + 6) == 6)
-        //{
-        //    allCircleVertices[(i * 8) + 6] = 0.5f;
-        //}
-        //else if ((i * 8 + 6) == k) /*|| (i * 8 + 6) == 38 || (i * 8 + 6) == 54 || (i * 8 + 6) == 70 || (i * 8 + 6) == 86 || (i * 8 + 6) == 92)*/
-        //{
-        //    allCircleVertices[(i * 8) + 6] = 1.0f;
-        //    k += 16;
-        //}
-        //else
-        //{
-        //    allCircleVertices[(i * 8) + 6] = 0.0f;
-        //}
-        //if ((i * 8 + 7) == 7)
-        //{
-        //    allCircleVertices[(i * 8) + 7] = 0.5f;
 
-        //}
-        //else
-        //{
-        //    allCircleVertices[(i * 8) + 7] = 0.0f;
-        //}
+ 
     }
 
-
-
-
-
-    //GLfloat allCircleVertices[] = {
-    //0.0f, 0.0f, 0.0f,             0.0f, 1.0f, 0.0f,           0.5f, 0.5f,
-    //3.0f, 0.0f, 4.0f,             0.0f, 1.0f, 0.0f,           0.0f, 0.0f, 
-    //-3.0f, 0.0f, 4.0f,            0.0f, 1.0f, 0.0f,           1.0f, 0.0f, 
-    //-5.0f, 0.0f, 0.0f,            0.0f, 1.0f, 0.0f,           0.0f, 0.0f, 
-    //-3.0f, 0.0f, -4.0f,           0.0f, 1.0f, 0.0f,           1.0f, 0.0f, 
-    //3.0f, 0.0f, -4.0f,            0.0f, 1.0f, 0.0f,           0.0f, 0.0f, 
-    //5.0f, 0.0f, 0.0f,             0.0f, 1.0f, 0.0f,           1.0f, 0.0f, 
-
-    //};
-
-
-
-
-    //GLushort indices[] = {
-    //    0, 2, 1,
-    //    0, 3, 2,
-    //    0, 4, 3,
-    //    0, 5, 4,
-    //    0, 6, 5,
-    //    0, 1, 6
-    //};
 
     //For loop to fill Indices array with correct indices based on number of sides
     for (int i = 0; i < numberOfSides; i++)
@@ -1205,10 +1311,6 @@ void UCreateRoundTable(GLMesh& mesh)
         }
 
     }
-
-
-
- 
 
 
     const GLuint floatsPerVertex = 3;
@@ -1240,6 +1342,202 @@ void UCreateRoundTable(GLMesh& mesh)
     glVertexAttribPointer(2, floatsPerUV, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(float)* (floatsPerVertex + floatsPerNormal)));
     glEnableVertexAttribArray(2);
    
+}
+void UCreateCandle(GLMesh& mesh)
+{
+    /*FIX STILL NEEDED TO DYNAMICALLY UPDATE THESE VALUES*/
+    //When changing numberOfSides need to also update indices[] to numberOfSides*6 and allCircleVertices[] to numberOfVertices*numberOfSides
+    GLfloat x = 0;
+    GLfloat y = 0;
+    GLfloat z = 0;
+    GLfloat radius = 0.3f;
+    GLfloat height = 0.25f;
+    GLuint numberOfSides = 5;
+    GLuint numberOfVertices = (numberOfSides + 1) * 2;
+    GLuint k = 22;
+    GLfloat angle = (360 / numberOfSides) * (M_PI / 180);
+    GLushort indices[30];
+
+    GLfloat doublePi = 2.0f * M_PI;
+
+    GLfloat* circleVerticesX = new GLfloat[numberOfVertices];
+    GLfloat* circleVerticesY = new GLfloat[numberOfVertices];
+    GLfloat* circleVerticesZ = new GLfloat[numberOfVertices];
+    GLfloat* textureVerticesX = new GLfloat[numberOfVertices];
+    GLfloat* textureVerticesY = new GLfloat[numberOfVertices];
+    GLfloat* topCircleVerticesX = new GLfloat[numberOfVertices];
+    GLfloat* topCircleVerticesY = new GLfloat[numberOfVertices];
+    GLfloat* topCircleVerticesZ = new GLfloat[numberOfVertices];
+    GLfloat* topTextureVerticesX = new GLfloat[numberOfVertices];
+    GLfloat* topTextureVerticesY = new GLfloat[numberOfVertices];
+
+    GLfloat allCircleVertices[96];
+
+
+    //Loop to determine angles between vertices bottom circle
+    for (int i = 0; i < numberOfVertices; i++)
+    {
+        if (i == 0)
+        {
+            circleVerticesX[i] = x;
+            circleVerticesY[i] = y;
+            circleVerticesZ[i] = z;
+            textureVerticesX[i] = 0.5f;
+            textureVerticesY[i] = 0.5f;
+        }
+        else
+        {
+            circleVerticesX[i] = x + (radius * cos(i * doublePi / numberOfSides));
+            circleVerticesY[i] = y;
+            circleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
+            textureVerticesX[i] = x + 0.5f * cos(i * doublePi / numberOfSides);
+            textureVerticesY[i] = z + 0.5f * sin(i * doublePi / numberOfSides);
+        }
+
+    }
+
+    //Loop to determine angles between vertices top circle
+    for (int i = 0 ; i < numberOfVertices; i++)
+    {
+        if (i == 0)
+        {
+            topCircleVerticesX[i] = x;
+            topCircleVerticesY[i] = height;
+            topCircleVerticesZ[i] = z;
+            topTextureVerticesX[i] = 0.5f;
+            topTextureVerticesY[i] = 0.5f;
+        }
+        else
+        {
+            topCircleVerticesX[i] = x + (radius * cos(i * doublePi / numberOfSides));
+            topCircleVerticesY[i] = height;
+            topCircleVerticesZ[i] = z + (radius * sin(i * doublePi / numberOfSides));
+            topTextureVerticesX[i] = x + 0.5f * cos(i * doublePi / numberOfSides);
+            topTextureVerticesY[i] = z + 0.5f * sin(i * doublePi / numberOfSides);
+        }
+
+    }
+
+    //Loop to fill array with vertices for bottom circle
+    for (int i = 0; i < (numberOfVertices/2); i++)
+    {
+
+        allCircleVertices[i * 8] = circleVerticesX[i];
+        allCircleVertices[(i * 8) + 1] = circleVerticesY[i];
+        allCircleVertices[(i * 8) + 2] = circleVerticesZ[i];
+        allCircleVertices[(i * 8) + 3] = 0.0f;
+        allCircleVertices[(i * 8) + 4] = 1.0f;
+        allCircleVertices[(i * 8) + 5] = 0.0f;
+
+        if (i == 0)
+        {
+            allCircleVertices[6] = 0.5f;
+            allCircleVertices[7] = 0.5f;
+        }
+        else
+        {
+            allCircleVertices[(i * 8 + 6)] = textureVerticesX[i];
+            allCircleVertices[(i * 8 + 7)] = textureVerticesY[i];
+        }
+    }
+    //Loop to fill array with vertices for top circle
+    for (int i = (numberOfVertices/2); i < numberOfVertices; i++)
+    {
+
+        allCircleVertices[(i * 8)] = topCircleVerticesX[i-numberOfVertices];
+        allCircleVertices[(i * 8) + 1] = topCircleVerticesY[i-numberOfVertices];
+        allCircleVertices[(i * 8) + 2] = topCircleVerticesZ[i-numberOfVertices];
+        allCircleVertices[(i * 8) + 3] = 0.0f;
+        allCircleVertices[(i * 8) + 4] = 1.0f;
+        allCircleVertices[(i * 8) + 5] = 0.0f;
+
+        if (i == numberOfVertices / 2)
+        {
+            allCircleVertices[numberOfVertices + 6] = 0.5f;
+            allCircleVertices[numberOfVertices + 7] = 0.5f;
+        }
+        else
+        {
+            allCircleVertices[(i * 8 + 6)] = topTextureVerticesX[i-numberOfVertices];
+            allCircleVertices[(i * 8 + 7)] = topTextureVerticesY[i-numberOfVertices];
+        }
+        cout << "X: " << allCircleVertices[(i * 8)] << endl;
+        cout << "Y: " << allCircleVertices[(i * 8) + 1] << endl;
+        cout << "Z: " << allCircleVertices[(i * 8) + 2] << endl;
+        cout << "Texture X: " << allCircleVertices[(i * 8 + 6)] << endl;
+        cout << "Texture y: " << allCircleVertices[(i * 8 + 7)] << endl;
+        cout << i << endl;
+    }
+
+    //For loop to fill Indices array with correct indices based on number of sides
+    for (int i = 0; i < numberOfSides; i++)
+    {
+        if (i == (numberOfSides - 1))
+        {
+            indices[i * 3] = 0;
+            indices[(i * 3) + 1] = indices[2];
+            indices[(i * 3) + 2] = numberOfSides;
+            cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+        }
+        else
+        {
+            indices[i * 3] = 0;
+            indices[(i * 3) + 1] = i + 2;
+            indices[(i * 3) + 2] = i + 1;
+            cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+        }
+
+    }
+    for (int i = numberOfSides; i < numberOfSides*2; i++)
+    {
+        if (i == ((numberOfSides*2) - 1))
+        {
+            indices[i * 3] = numberOfSides;
+            indices[(i * 3) + 1] = numberOfSides + 1;
+            indices[(i * 3) + 2] = numberOfSides * 2;
+            cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+        }
+        else
+        {
+            indices[i * 3] = numberOfSides;
+            indices[(i * 3) + 1] = i + 2;
+            indices[(i * 3) + 2] = i + 1;
+            cout << indices[i * 3] << ", " << indices[(i * 3) + 1] << ", " << indices[(i * 3) + 2] << endl;
+        }
+
+    }
+
+
+
+    const GLuint floatsPerVertex = 3;
+    const GLuint floatsPerNormal = 3;
+    const GLuint floatsPerUV = 2;
+
+    glGenVertexArrays(1, &mesh.vao); // we can also generate multiple VAOs or buffers at the same time
+    glBindVertexArray(mesh.vao);
+
+    // Create 2 buffers: first one for the vertex data; second one for the indices
+    glGenBuffers(2, mesh.vbos);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbos[0]); // Activates the buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW); // Sends vertex or coordinate data to the GPU
+
+    mesh.nIndices = sizeof(indices) / sizeof(indices[0]) * (floatsPerVertex + floatsPerNormal + floatsPerUV);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.vbos[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // Strides between vertex coordinates is 6 (x, y, z, r, g, b, a). A tightly packed stride is 0.
+    GLint stride = sizeof(float) * (floatsPerVertex + floatsPerNormal + floatsPerUV);// The number of floats before each
+
+    // Create Vertex Attribute Pointers
+    glVertexAttribPointer(0, floatsPerVertex, GL_FLOAT, GL_FALSE, stride, 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, floatsPerNormal, GL_FLOAT, GL_FALSE, stride, (char*)(sizeof(float) * floatsPerVertex));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, floatsPerUV, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(float) * (floatsPerVertex + floatsPerNormal)));
+    glEnableVertexAttribArray(2);
+
 }
 
 
@@ -1289,7 +1587,45 @@ bool UCreateTexture(const char* filename, GLuint& textureId)
     // Error loading the image
     return false;
 }
+bool UCreateTextureClamp(const char* filename, GLuint& textureId)
+{
+    int width, height, channels;
+    unsigned char* image = stbi_load(filename, &width, &height, &channels, 0);
+    if (image)
+    {
+        flipImageVertically(image, width, height, channels);
 
+        glGenTextures(1, &textureId);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+
+        // set the texture wrapping parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // set texture filtering parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        if (channels == 3)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        else if (channels == 4)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+        else
+        {
+            cout << "Not implemented to handle image with " << channels << " channels" << endl;
+            return false;
+        }
+
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        stbi_image_free(image);
+        glBindTexture(GL_TEXTURE_2D, 0); // Unbind the texture
+
+        return true;
+    }
+
+    // Error loading the image
+    return false;
+}
 
 void UDestroyTexture(GLuint textureId)
 {
