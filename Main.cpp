@@ -52,6 +52,7 @@ namespace
     GLMesh gCandle;
     GLMesh gCoaster;
     GLMesh gCoaster2;
+    GLMesh gCoaster3;
     // Shader program
     GLuint gProgramId;
     GLuint gLightProgramId;
@@ -101,11 +102,15 @@ namespace
     glm::vec3 gCoasterScale(1.0f);
     glm::vec3 gCoasterPosition2(-2.5f, -0.2f, 0.9f);
     glm::vec3 gCoasterScale2(1.0f);
+    glm::vec3 gCoasterPosition3(2.0f, -0.2f, -0.9f);
+    glm::vec3 gCoasterScale3(1.0f);
+
+
 
 
     // Object and light color
     glm::vec3 gObjectColor(1.f, 0.2f, 0.0f);
-    glm::vec3 gLightColor(1.0f, 1.0f, 1.0f);
+    glm::vec3 gLightColor(0.95f, 0.92f, 0.66f);
     glm::vec3 gLightColor2(0.84f, 0.91f, 0.97f);
 
 
@@ -338,6 +343,8 @@ int main(int argc, char* argv[])
     UCreateRoundTable(gRoundTable);
     UCreateCoaster(gCoaster);
     UCreateCoaster(gCoaster2);
+    UCreateCoaster(gCoaster3);
+
     // Create the shader program
     if (!UCreateShaderProgram(vertexShaderSource, fragmentShaderSource, gProgramId))
         return EXIT_FAILURE;
@@ -417,6 +424,8 @@ int main(int argc, char* argv[])
     UDestroyMesh(gRoundTable);
     UDestroyMesh(gCoaster);
     UDestroyMesh(gCoaster2);
+    UDestroyMesh(gCoaster3);
+
 
 
     //Release Texture data
@@ -723,6 +732,24 @@ void URender()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gCoasterTex);
     glDrawElements(GL_TRIANGLES, gCoaster2.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
+
+    //Draws Third Coaster
+    model = glm::translate(gCoasterPosition3) * glm::rotate(30.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(gCoasterScale3);
+
+    // Reference matrix uniforms from the Shader program
+    modelLoc = glGetUniformLocation(gProgramId, "model");
+    viewLoc = glGetUniformLocation(gProgramId, "view");
+    projLoc = glGetUniformLocation(gProgramId, "projection");
+
+    // Pass matrix data to the Shader program's matrix uniforms
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glBindVertexArray(gCoaster3.vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gCoasterTex);
+    glDrawElements(GL_TRIANGLES, gCoaster3.nIndices, GL_UNSIGNED_SHORT, NULL); // Draws the triangle
 
     //Draws Light
     //----------------
